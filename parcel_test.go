@@ -31,17 +31,16 @@ func getTestParcel() Parcel {
 
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
-	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
 	defer db.Close()
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS parcel (
-		number INTEGER PRIMARY KEY AUTOINCREMENT,
-		client INTEGER,
-		status TEXT,
-		address TEXT,
-		created_at TEXT
+		number INTEGER constraint parcel_pk PRIMARY KEY AUTOINCREMENT,
+		client INTEGER NOT NULL,
+		status VARCHAR(128) NOT NULL,
+		address VARCHAR(512) NOT NULL,
+		created_at TEXT NOT NULL
 	)`)
 	require.NoError(t, err)
 
@@ -51,13 +50,15 @@ func TestAddGetDelete(t *testing.T) {
 	// add
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
-	require.NotZero(t, id)
+	require.NotZero(t, id, "ID не должен быть нулевым")
 	parcel.Number = id
 
 	// get
 	got, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, parcel.Number, got.Number)
+
+	// compare
+	require.Equal(t, id, got.Number)
 	require.Equal(t, parcel.Client, got.Client)
 	require.Equal(t, parcel.Status, got.Status)
 	require.Equal(t, parcel.Address, got.Address)
@@ -66,6 +67,8 @@ func TestAddGetDelete(t *testing.T) {
 	// delete
 	err = store.Delete(id)
 	require.NoError(t, err)
+
+	// try to get again
 	_, err = store.Get(id)
 	require.Error(t, err)
 }
@@ -78,11 +81,11 @@ func TestSetAddress(t *testing.T) {
 	defer db.Close()
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS parcel (
-		number INTEGER PRIMARY KEY AUTOINCREMENT,
-		client INTEGER,
-		status TEXT,
-		address TEXT,
-		created_at TEXT
+		number INTEGER constraint parcel_pk PRIMARY KEY AUTOINCREMENT,
+		client INTEGER NOT NULL,
+		status VARCHAR(128) NOT NULL,
+		address VARCHAR(512) NOT NULL,
+		created_at TEXT NOT NULL
 	)`)
 	require.NoError(t, err)
 
@@ -114,11 +117,11 @@ func TestSetStatus(t *testing.T) {
 	defer db.Close()
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS parcel (
-		number INTEGER PRIMARY KEY AUTOINCREMENT,
-		client INTEGER,
-		status TEXT,
-		address TEXT,
-		created_at TEXT
+		number INTEGER constraint parcel_pk PRIMARY KEY AUTOINCREMENT,
+		client INTEGER NOT NULL,
+		status VARCHAR(128) NOT NULL,
+		address VARCHAR(512) NOT NULL,
+		created_at TEXT NOT NULL
 	)`)
 	require.NoError(t, err)
 
@@ -150,11 +153,11 @@ func TestGetByClient(t *testing.T) {
 	defer db.Close()
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS parcel (
-		number INTEGER PRIMARY KEY AUTOINCREMENT,
-		client INTEGER,
-		status TEXT,
-		address TEXT,
-		created_at TEXT
+		number INTEGER constraint parcel_pk PRIMARY KEY AUTOINCREMENT,
+		client INTEGER NOT NULL,
+		status VARCHAR(128) NOT NULL,
+		address VARCHAR(512) NOT NULL,
+		created_at TEXT NOT NULL
 	)`)
 	require.NoError(t, err)
 

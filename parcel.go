@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type ParcelStore struct {
@@ -13,17 +14,26 @@ func NewParcelStore(db *sql.DB) ParcelStore {
 }
 
 func (s ParcelStore) Add(p Parcel) (int, error) {
-	// реализуйте добавление строки в таблицу parcel, используйте данные из переменной p
-	_, err := s.db.Exec("INSERT INTO parcel (client, status, address, created_at) VALUES ($1, $2, $3, $4)", p.Client, p.Status, p.Address, p.CreatedAt)
-	if err != nil {
-		return 0, err
-	}
-
-	// верните идентификатор последней добавленной записи
 	var id int
-	err = s.db.QueryRow("SELECT last_insert_rowid()").Scan(&id)
+	query := `INSERT INTO parcel (client, status, address, created_at) 
+              VALUES ($1, $2, $3, $4) 
+              RETURNING number`
+	err := s.db.QueryRow(query, p.Client, p.Status, p.Address, p.CreatedAt).Scan(&id)
 	if err != nil {
-		return 0, err
+		// fallback для windows , у меня всегда выводило 0
+		res, err2 := s.db.Exec("INSERT INTO parcel (client, status, address, created_at) VALUES ($1, $2, $3, $4)",
+			p.Client, p.Status, p.Address, p.CreatedAt)
+		if err2 != nil {
+			return 0, err2
+		}
+		id64, _ := res.LastInsertId()
+		if id64 != 0 {
+			return int(id64), nil
+		}
+		err2 = s.db.QueryRow("SELECT last_insert_rowid()").Scan(&id)
+		if err2 != nil {
+			return 0, fmt.Errorf("insert failed and cannot retrieve id: %w", err2)
+		}
 	}
 	return id, nil
 }
